@@ -3,7 +3,7 @@
 📅 时间：2025年2月28日   
 👨‍💻 作者GitHub：@caspiankexin   
 📨 作者邮箱： [联系我](mailto:mirror_flower@outlook.com)  
-📢 项目地址：[Video_Time_Calibrato](https://github.com/caspiankexin/Video_Time_Calibrator)
+📢 项目地址：[Video_Time_Calibrato](https://github.com/caspiankexin/Video_Time_Calibrator)  
 ⏬ 下载地址：[资源导航页](https://flowus.cn/cckeker/share/85efac3f-a20d-4f36-b68a-410decf4f6da)   
 ✳️ 转载至：原创  
 
