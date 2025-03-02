@@ -1,10 +1,8 @@
-# Video_Time_Calibrator
-
 📅 时间：2025年2月28日   
 👨‍💻 作者GitHub：@caspiankexin   
 📨 作者邮箱： [联系我](mailto:mirror_flower@outlook.com)  
-📢 项目地址：[Video_Time_Calibrato](https://github.com/caspiankexin/Video_Time_Calibrator)  
-⏬ 下载地址：[资源导航页](https://flowus.cn/cckeker/share/85efac3f-a20d-4f36-b68a-410decf4f6da)   
+📢 项目地址：[Media File Time Calibrator](https://github.com/caspiankexin/Video_Time_Calibrator)
+⏬ 下载地址：[资源导航页](https://flowus.cn/cckeker/share/85efac3f-a20d-4f36-b68a-410decf4f6da) 
 ✳️ 转载至：原创  
 
 ---
@@ -31,16 +29,17 @@
 | 天翼相册     | 媒体创建日期 |
 | 华为云相册    | 修改日期   |
 |          |        |
-|          |        |
 ## 需求及使用场景
 
 需求就是保证视频在不同相册平台的时间信息都是准确一致的，这就要求视频exif元数据中所有时间信息保持一致。对于“媒体创建日期”丢失及错误的文件，要清晰筛选出来，以便我手动对照修改。
 
 关于“媒体创建日期”需要快速修改的情况，此次不涉及，可以下面exiftool工具介绍部分了解，自己研究。（因为我认为视频的准备日期需要用户翻看回忆一一确定，不存在批量修改的场景。）
 
-# 视频文件exif时间信息
+# 视频、图片文件exif时间信息
 
-## Windows文件管理器读取的信息
+## 视频文件exif信息
+
+### Windows文件管理器读取的信息
 
 *在文件“属性”→“详细信息”查看*
 
@@ -48,20 +47,13 @@
 - 修改日期（部分相册平台的时间依据）
 - 创建媒体日期（相册平台的时间依据）
 
-## exiftool读取的信息
+### exiftool读取的信息
 
 *通过 `exiftool 文件名.mp4` 命令查看*
 
-- File Creation Date/Time 
-- File Modification Date/Time
-- Create Date
-- Modify Date
-- Track Create Date
-- Track Modify Date
-- Media Create Date
-- Media Modify Date
+File Creation Date/Time 、 File Modification Date/Time、Create Date、Modify Date、Track Create Date、Track Modify Date、Media Create Date、Media Modify Date
 
-## 文件管理器和exiftool的相互对应及含义
+### 文件管理器和exiftool的相互对应及含义
 
 | 文件管理器  | exiftool信息                  |
 | ------ | --------------------------- |
@@ -71,7 +63,29 @@
 
 其余的`Modify Date`、`Track Create Date`、`Track Modify Date`、`Media Create Date`、`Media Modify Date`等信息，经过实验比对，记录的都是视频的拍摄日期，也就是“`媒体创建日期`”/“`Create Date`”。
 
-# 通过exiftool处理视频exif信息
+## 图片文件exif信息
+
+### Windows文件管理器读取的信息
+
+*在文件“属性”→“详细信息”查看*
+
+- 创建日期 
+- 修改日期
+- 拍摄日期（相册平台的时间依据）
+
+### exiftool读取的信息
+
+*通过 `exiftool 文件名.jpg` 命令查看*，主要有以下时间信息：File Creation Date/Time 、 File Modification Date/Time、Modify Date、Date/Time Original、Create Date。
+
+### 时间信息分析
+
+exiftool读取的时间文件中，理论上应该和视频一样，`Create Date`对应的是图片的`拍摄日期`，二者对别，也确实能对应上，但是实际操作过程中，很多图片文件（一般是第三方相机软件的照片）明明有`拍摄日期`，但是exiftool却读不出来`Create Date`。
+
+经过试验，发现这些图片在未修改过`拍摄日期`前，只有`Date/Time Original`，修改过后，才会出现`Create Date`。查资料了解到`Date/Time Original`储存的是照片的最初拍照日期，虽然`Date/Time Original`和`Create Date`的时间信息是一致的（但是也发现部分图片二者信息不对应，有几小时差别，怀疑是时区问题）。
+
+所以最后在软件上，对于jpg格式的图片，采用`Date/Time Original`信息作为拍摄信息进行修改。
+
+# 通过exiftool处理文件exif信息
 
 ## exiftool基本介绍
 
@@ -104,11 +118,27 @@ ExifTool 是一款功能强大的跨平台开源工具，主要用于读取、�
 - 示例：`exiftool -all= -r /path/to/photos/`  # 批量删除所有元数据
 - `exiftool -TAG="值" *.jpg`  # 批量处理所有jpg文件
 
-# 软件使用方法
+# 软件教程
 
-前往文头的下载地址下载压缩文件，解压缩，确保exiftool文件和视频时间校准统一工具在一个文件夹下面。
+## 软件功能描述
 
-打开工具，选择需要操作的视频所在的文件夹，然后开始处理，软件就会将视频文件的所有的时间信息全部修改为`媒体创建日期`，对于`媒体创建日期`丢失的文件，会在文件前加上`无效时间`的前缀。
+- 软件可以处理mp4、MP4、jpg、JPG、jpeg、heic格式的文件。
+- 以文件拍摄日期来修改其他时间信息，并重命名。
+- 文件名后加MD5值的前六位，避免时间相同导致文件名冲突。
+- 在重复的文件前加上“重复文件”字样，给予提示。
+- 如需处理其他格式文件，请访问GitHub地址，查看说明。
+
+## 使用方法
+
+1. 前往文头的下载地址下载压缩文件，解压缩，确保exiftool文件和视频时间校准统一工具在一个文件夹下面。
+
+2. 打开工具，选择需要操作的文件所在的文件夹，然后开始处理，软件就会将视频、照片文件的所有的时间信息全部修改为“拍摄日期”，对于“拍摄日期”丢失的文件，会在文件前加上`无效时间`的前缀。
+
+## 拓展支持文件格式的方法
+
+1. 在`def get_metadata(file_path, type):`部分添加需要处理的格式，并选择合适的`exif元数据`作为修改依据。
+2. 在`def process_videos():`中，修改`if file_path.suffix in [".mp4", ".jpeg", ".heic", ".jpg", ".JPG", ".MP4" , ".HEIC"]:`，将需要处理的格式添加进去。
+3. 在`def process_videos():`中，仿照jpg格式，添加新的代码，即可。
 
 注意：操作前，请做好文件备份，以免丢失。
 
