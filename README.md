@@ -10,6 +10,30 @@
 ✳️ 转载至：原创  
 
 ---
+# 软件教程
+
+## 软件功能描述
+
+- 软件可以处理mp4、MP4、jpg、JPG、jpeg、heic格式的文件。
+- 以文件拍摄日期来修改其他时间信息，并重命名。
+- 文件名后加MD5值的前六位，避免时间相同导致文件名冲突。
+- 在重复的文件前加上“重复文件”字样，给予提示。
+- 如需处理其他格式文件，请访问GitHub地址，查看说明。
+
+## 使用方法
+
+1. 前往文头的下载地址下载压缩文件，解压缩，确保exiftool文件和视频时间校准统一工具在一个文件夹下面。
+
+2. 打开工具，选择需要操作的文件所在的文件夹，然后开始处理，软件就会将视频、照片文件的所有的时间信息全部修改为“拍摄日期”，对于“拍摄日期”丢失的文件，会在文件前加上`无效时间`的前缀。
+
+## 拓展支持文件格式的方法
+
+1. 在`def get_metadata(file_path, type):`部分添加需要处理的格式，并选择合适的`exif元数据`作为修改依据。
+2. 在`def process_videos():`中，修改`if file_path.suffix in [".mp4", ".jpeg", ".heic", ".jpg", ".JPG", ".MP4" , ".HEIC"]:`，将需要处理的格式添加进去。
+3. 在`def process_videos():`中，仿照jpg格式，添加新的代码，即可。
+
+注意：操作前，请做好文件备份，以免丢失。
+ 
 # 问题描述
 
 ## 相册时间墙
@@ -65,6 +89,8 @@ File Creation Date/Time 、 File Modification Date/Time、Create Date、Modify D
 | 创建日期   | File Creation Date/Time     |
 | 修改日期   | File Modification Date/Time |
 
+对于mp4文件，优先采用`Create Date`来作为拍摄日期，但是部分视频文件`Create Date`信息为0000，无奈也可以考虑文件`File Modification Date/Time`信息也大概率就是拍摄日期，所以其次用`File Modification Date/Time`信息来作为拍摄日期，==**这就需要在处理文件前先大致坚持一下文件修改日期有没有太大问题，且文件处理后进行检查。**==
+
 其余的`Modify Date`、`Track Create Date`、`Track Modify Date`、`Media Create Date`、`Media Modify Date`等信息，经过实验比对，记录的都是视频的拍摄日期，也就是“`媒体创建日期`”/“`Create Date`”。
 
 ## 图片文件exif信息
@@ -87,7 +113,9 @@ exiftool读取的时间文件中，理论上应该和视频一样，`Create Date
 
 经过试验，发现这些图片在未修改过`拍摄日期`前，只有`Date/Time Original`，修改过后，才会出现`Create Date`。查资料了解到`Date/Time Original`储存的是照片的最初拍照日期，虽然`Date/Time Original`和`Create Date`的时间信息是一致的（但是也发现部分图片二者信息不对应，有几小时差别，怀疑是时区问题）。
 
-所以最后在软件上，对于jpg格式的图片，采用`Date/Time Original`信息作为拍摄信息进行修改。
+但是，又发现有些照片文件`Date/Time Original`不存在，这种情况就让exiftool去读取`Create Date`信息来作为拍摄日期。（只能说这些媒体文件的情况也太复杂了）
+
+所以最后在软件上，对于jpg格式的图片，先采用`Date/Time Original`信息作为拍摄信息进行修改，再考虑`Create Date`信息作为拍摄信息进行修改。
 
 # 通过exiftool处理文件exif信息
 
@@ -122,29 +150,10 @@ ExifTool 是一款功能强大的跨平台开源工具，主要用于读取、�
 - 示例：`exiftool -all= -r /path/to/photos/`  # 批量删除所有元数据
 - `exiftool -TAG="值" *.jpg`  # 批量处理所有jpg文件
 
-# 软件教程
+### 按照文件名修改拍摄日期
 
-## 软件功能描述
-
-- 软件可以处理mp4、MP4、jpg、JPG、jpeg、heic格式的文件。
-- 以文件拍摄日期来修改其他时间信息，并重命名。
-- 文件名后加MD5值的前六位，避免时间相同导致文件名冲突。
-- 在重复的文件前加上“重复文件”字样，给予提示。
-- 如需处理其他格式文件，请访问GitHub地址，查看说明。
-
-## 使用方法
-
-1. 前往文头的下载地址下载压缩文件，解压缩，确保exiftool文件和视频时间校准统一工具在一个文件夹下面。
-
-2. 打开工具，选择需要操作的文件所在的文件夹，然后开始处理，软件就会将视频、照片文件的所有的时间信息全部修改为“拍摄日期”，对于“拍摄日期”丢失的文件，会在文件前加上`无效时间`的前缀。
-
-## 拓展支持文件格式的方法
-
-1. 在`def get_metadata(file_path, type):`部分添加需要处理的格式，并选择合适的`exif元数据`作为修改依据。
-2. 在`def process_videos():`中，修改`if file_path.suffix in [".mp4", ".jpeg", ".heic", ".jpg", ".JPG", ".MP4" , ".HEIC"]:`，将需要处理的格式添加进去。
-3. 在`def process_videos():`中，仿照jpg格式，添加新的代码，即可。
-
-注意：操作前，请做好文件备份，以免丢失。
+- `exiftool.exe '-FileCreateDate<filename' *.jpg` //将文件名中的时间设置为文件创建时间 
+- `exiftool.exe '-FileModifyDate<filename' *.jpg` //将文件名中的时间设置为文件修改时间
 
 ---
 
