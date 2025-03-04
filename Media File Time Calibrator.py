@@ -1,11 +1,3 @@
-'''
-代码名称：媒体文件时间校准统一工具（Media File Time Calibrator）
-编写日期：2025年2月28日
-作者：github（@caspiankexin）
-版本：第1版
-注意：此代码仅供交流学习，不得作为其他用途。
-'''
-
 import hashlib
 import subprocess
 from datetime import datetime
@@ -33,26 +25,69 @@ def convertDate(MediaCreateDateText):
 
 # 使用 exiftool 获取媒体创建日期
 def get_metadata(file_path, type):
-    arg1 = ""
     if type in [".mp4", ".MP4"]:
-        arg1 = "-CreateDate"
-    elif type in [".JPG", ".jpg"]:
-        arg1 = "-DateTimeOriginal"
-    elif type in [".heic", ".HEIC"]:
-        arg1 = "-CreateDate"
-    elif type == ".jpeg":
-        arg1 = "-CreateDate"
+        # 先获取 CreateDate
+        result_cd = subprocess.run(
+            ["exiftool", "-CreateDate", file_path],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+        create_date = result_cd.stdout if result_cd.returncode == 0 else None
 
-    result = subprocess.run(
-        ["exiftool", arg1, file_path],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True,
-    )
-    if result.returncode == 0:
-        return result.stdout
-    else:
-        print(f"Error: {result.stderr}")
+        # 获取 File Modification Date/Time
+        result_fmd = subprocess.run(
+            ["exiftool", "-FileModifyDate", file_path],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+        file_modify_date = result_fmd.stdout if result_fmd.returncode == 0 else None
+
+        if create_date and "0000" in create_date:
+            return file_modify_date
+        return create_date
+    elif type in [".JPG", ".jpg"]:
+        # 先尝试获取 DateTimeOriginal
+        result_dt = subprocess.run(
+            ["exiftool", "-DateTimeOriginal", file_path],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+        if result_dt.returncode == 0 and result_dt.stdout.strip():
+            return result_dt.stdout
+        else:
+            # 如果 DateTimeOriginal 不存在，尝试获取 CreateDate
+            result_cd = subprocess.run(
+                ["exiftool", "-CreateDate", file_path],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+            )
+            if result_cd.returncode == 0:
+                return result_cd.stdout
+            else:
+                print(f"Error: {result_cd.stderr}")
+    elif type in [".heic", ".HEIC"]:
+        result = subprocess.run(
+            ["exiftool", "-CreateDate", file_path],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+        return result.stdout if result.returncode == 0 else None
+    elif type == ".jpeg":
+        result = subprocess.run(
+            ["exiftool", "-CreateDate", file_path],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+        return result.stdout if result.returncode == 0 else None
+
+    print(f"Unsupported file type: {type}")
+    return None
 
 def process_videos():
 
@@ -69,7 +104,7 @@ def process_videos():
 
     for file_path in folder_path.rglob("*"):
         if file_path.is_file():
-            if file_path.suffix in [".mp4", ".jpeg", ".heic", ".jpg", ".JPG", ".MP4" , ".HEIC"]:
+            if file_path.suffix in [".mp4", ".jpeg", ".heic", ".jpg", ".JPG", ".MP4", ".HEIC"]:
 
                 MediaCreateDateStr = get_metadata(file_path.resolve(), file_path.suffix)
                 if MediaCreateDateStr:
@@ -86,13 +121,14 @@ def process_videos():
                     if file_path.suffix in [".mp4", ".MP4"]:
                         subprocess.run(
                             ["exiftool", "-overwrite_original",
+                             "-CreateDate=" + localDate.strftime("%Y:%m:%d %H:%M:%S"),
                              "-FileModifyDate=" + localDate.strftime("%Y:%m:%d %H:%M:%S"),
                              "-FileCreateDate=" + localDate.strftime("%Y:%m:%d %H:%M:%S"),
                              "-ModifyDate=" + localDate.strftime("%Y:%m:%d %H:%M:%S"),
                              "-TrackCreateDate=" + localDate.strftime("%Y:%m:%d %H:%M:%S"),
                              "-TrackModifyDate=" + localDate.strftime("%Y:%m:%d %H:%M:%S"),
-                             "-MediaCreateDate =" + localDate.strftime("%Y:%m:%d %H:%M:%S"),
-                             "-MediaModifyDate =" + localDate.strftime("%Y:%m:%d %H:%M:%S"), file_path],
+                             "-MediaCreateDate=" + localDate.strftime("%Y:%m:%d %H:%M:%S"),
+                             "-MediaModifyDate=" + localDate.strftime("%Y:%m:%d %H:%M:%S"), file_path],
                             stdout=subprocess.PIPE,
                             stderr=subprocess.PIPE,
                             text=True,
@@ -110,16 +146,17 @@ def process_videos():
                             stderr=subprocess.PIPE,
                             text=True,
                         )
-                    elif  file_path.suffix in [".jpg", ".JPG"]:
+                    elif file_path.suffix in [".jpg", ".JPG"]:
                         subprocess.run(
                             ["exiftool", "-overwrite_original",
                              "-FileModifyDate=" + localDate.strftime("%Y:%m:%d %H:%M:%S"),
-                             "-FileCreateDate=" + localDate.strftime("%Y:%m:%d %H:%M:%S"), file_path],
+                             "-FileCreateDate=" + localDate.strftime("%Y:%m:%d %H:%M:%S"),
+                             "-DateTimeOriginal=" + localDate.strftime("%Y:%m:%d %H:%M:%S"),
+                             "-CreateDate=" + localDate.strftime("%Y:%m:%d %H:%M:%S"), file_path],
                             stdout=subprocess.PIPE,
                             stderr=subprocess.PIPE,
                             text=True,
                         )
-
 
                     elif file_path.suffix == ".jpeg":
                         subprocess.run(
@@ -142,7 +179,6 @@ def process_videos():
                             md5_hash.update(chunk)
                     md5_code = md5_hash.hexdigest()
 
-
                     # 检查该MD5值是否已经存在于字典中
                     if md5_code in md5_count:
                         # 如果存在，则增加序列号
@@ -153,13 +189,6 @@ def process_videos():
                         # 如果不存在，则将该MD5值添加到字典中，并设置序列号为1
                         md5_count[md5_code] = 1
                         new_filename = f"{date_str}_{md5_code[:6]}{file_path.suffix}"
-
-                        # 将MD5值添加到字典中
-                        if md5_code not in md5_count:
-                            md5_count[md5_code] = 0
-
-                        # 增加MD5值的计数
-                        md5_count[md5_code] += 1
 
                     # 重命名文件
                     new_path = file_path.parent / new_filename
@@ -175,11 +204,6 @@ def process_videos():
 
     print("\n" + "文件夹下所有支持的文件，已经全部处理完毕！" + "\n")
 
-def get_resource_path(relative_path):
-    # 用于打包含有图片的Python程序
-    if hasattr(sys, '_MEIPASS'):
-        return os.path.join(sys._MEIPASS, relative_path)
-    return os.path.join(os.path.abspath("."), relative_path)
 
 if __name__ == "__main__":
     root = tk.Tk()
